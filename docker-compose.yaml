@@ -1,0 +1,42 @@
+services:
+  client:
+    build:
+      context: ./app/client
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    volumes:
+      - ./images/:/app/static/images
+    networks:
+      - my_network
+
+  server:
+    build:
+      context: ./app/server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./images/:/server/images
+    networks:
+      - my_network
+    restart: always
+
+  db:
+    container_name: db
+    image: postgres
+    environment:
+      - POSTGRES_DB = admin
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./db/:/var/lib/postgresql/data
+    networks:
+      - my_network
+    restart: always
+
+networks:
+  my_network:
+    driver: bridge
