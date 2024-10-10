@@ -3,7 +3,7 @@ services:
     build:
       context: ./app/client
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - server
     volumes:
@@ -16,11 +16,14 @@ services:
       context: ./app/server
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - ./images/:/server/images
     networks:
       - my_network
-    restart: unless-stopped
+    restart: always
 
   db:
     container_name: db
@@ -29,13 +32,19 @@ services:
       - POSTGRES_DB = admin
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d admin -U admin" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
     ports:
       - '5432:5432'
     volumes:
       - ./db/:/var/lib/postgresql/data
     networks:
       - my_network
-    restart: unless-stopped
+    restart: always
 
 networks:
   my_network:

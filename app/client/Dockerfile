@@ -1,10 +1,7 @@
 FROM nginx
 
-#RUN rm /etc/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+RUN rm /etc/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
+COPY /client/static /app/static
 
-WORKDIR /app
-
-COPY static ./static
-
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY /client/nginx.conf /etc/nginx/nginx.conf

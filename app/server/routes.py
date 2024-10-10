@@ -14,24 +14,33 @@ query_params = {"api_key": "test"}
 
 @router.get(
     path="/users/me",
-    response_model=UserOutSchema,
 )
 async def get_profile_my(
-) -> UserOutSchema:
-    """
-    Получить профиль текущего пользователя.
+):
 
-    Параметры:
-        session (AsyncSession): Сессия базы данных.
-        api_key (str): API ключ пользователя, передаваемый в заголовке.
-
-    Возвращает:
-        SuccessOutUserSchema: Данные профиля пользователя.
-
-    """
     user_select = await session.execute(
         select(User)
         .where(User.api_key == query_params["api_key"])
     )
     result =  user_select.scalar()
-    return result
+    res = {
+        "result": "true",
+        "user": {
+            "id": "int",
+            "name": result.name,
+            "followers": [
+                {
+                    "id": 1,
+                    "name": 'lisa'
+                }
+            ],
+            "following": [
+                {
+                    "id": 1,
+                    "name": "lisa1"
+                }
+            ]
+        }
+    }
+
+    return res
