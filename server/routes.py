@@ -1,4 +1,4 @@
-from fastapi import APIRouter, FastAPI, HTTPException, Header
+from fastapi import APIRouter, FastAPI, HTTPException, Header, Request
 from sqlalchemy import delete, update
 from schemas import UserOutSchema
 from typing import List
@@ -6,11 +6,18 @@ from database import engine, session
 from models import User, Base
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+#from fastapi.templating import Jinja2Templates
 router = APIRouter()
+#
+
 
 
 query_params = {"api_key": "test"}
+
+
+
 
 @router.get(
     path="/users/me",
