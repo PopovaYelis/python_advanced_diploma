@@ -1,8 +1,21 @@
 services:
+  client:
+    container_name: client
+    build:
+      context: ./app/client
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+    volumes:
+      - ./images/:/static/images
+    networks:
+      - my_network
 
   server:
+    container_name: server
     build:
-      context: ./server
+      context: ./app
     ports:
       - "8000:8000"
     depends_on:
