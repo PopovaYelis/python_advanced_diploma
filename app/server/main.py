@@ -26,7 +26,7 @@ project_root_absolute = project_root.resolve()
 static_root_absolute = project_root_absolute / "static"
 
 
-@app.get("/index")
+@app.get("/")
 def read_main():
     return FileResponse(f"../client/static/index.html")
 
@@ -34,3 +34,4 @@ def read_main():
 app.mount("/static", StaticFiles(directory=f"../client/static"), name="static")
 app.mount("/js", StaticFiles(directory=f"../client/static/js"), name="js")
 app.mount("/css", StaticFiles(directory=f"../client/static/css"), name="css")
+app.mount("/images", StaticFiles(directory="/server/images"), name="images")

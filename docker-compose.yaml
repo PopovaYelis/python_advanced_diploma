@@ -8,7 +8,7 @@ services:
     depends_on:
       - server
     volumes:
-      - ./images/:/static/images
+      - ./images/:/app/static/images
     networks:
       - my_network
 

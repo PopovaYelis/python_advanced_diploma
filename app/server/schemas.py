@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel
 
@@ -12,5 +12,8 @@ class UserSchema(BaseModel):
 
 class UserOutSchema(UserSchema):
     class Config:
-        orm_mode = True
+        from_attributes = True
 
+class TweetSchema(BaseModel):
+    tweet_data: str
+    tweet_media_ids: Optional[List[int]]
