@@ -1,5 +1,4 @@
 import asyncio
-
 from database import async_session, engine
 from models import Base, User
 from sqlalchemy import select

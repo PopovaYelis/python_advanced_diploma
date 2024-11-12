@@ -1,16 +1,19 @@
-from pydoc import describe
-
 from sqlalchemy import Column, String, Integer, ForeignKey, ARRAY
 from sqlalchemy.orm import (
     DeclarativeBase,
+    Mapped,
     declarative_base,
+    mapped_column,
     relationship,
 )
-from typing import Dict, Any
-from database import Base, session
+
+# Создаю тут, чтобы не было проблем с циклическим импортом
+Base: DeclarativeBase = declarative_base()
+
 
 class User(Base):
     __tablename__ = 'users'
+    __table_args__ = {'extend_existing': True}
     id: int = Column(Integer, primary_key=True)
     name: str = Column(String(50), nullable=False, unique=True)
     api_key: str = Column(String, unique=True, index=True)
@@ -30,8 +33,10 @@ class User(Base):
         lazy="selectin",
     )
 
+
 class Tweet(Base):
     __tablename__ = 'tweets'
+    __table_args__ = {'extend_existing': True}
     id: int = Column(Integer, primary_key=True)
     user_id: int = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     content: str = Column(String(280), nullable=False)
@@ -41,7 +46,7 @@ class Tweet(Base):
 
 class Like(Base):
     __tablename__ = "likes"
-
+    __table_args__ = {'extend_existing': True}
     tweet_id: int = Column(Integer, ForeignKey("tweets.id"), nullable=False, primary_key=True)
     user_id: int = Column(Integer, ForeignKey("users.id"), nullable=False, primary_key=True)
     tweet = relationship("Tweet", back_populates="likes")
@@ -49,7 +54,7 @@ class Like(Base):
 
 class Media(Base):
     __tablename__ = "medias"
-
+    __table_args__ = {'extend_existing': True}
     id: int = Column(Integer, primary_key=True)
     path_file: str = Column(String, nullable=False)
     user_id: int = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -58,7 +63,7 @@ class Media(Base):
 class Follow(Base):
 
     __tablename__ = "followers"
-
+    __table_args__ = {'extend_existing': True}
     follower_id: int = Column(Integer, ForeignKey("users.id"), primary_key=True)
     followed_id: int = Column(Integer, ForeignKey("users.id"), primary_key=True)
     follower = relationship("User", foreign_keys=[follower_id])
