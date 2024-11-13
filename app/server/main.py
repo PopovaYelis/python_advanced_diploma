@@ -1,11 +1,10 @@
+"""Main application file."""
+
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
-from fastapi import FastAPI
-from starlette.staticfiles import StaticFiles
 
-from routes import router
 from database import engine
-from fastapi.responses import FileResponse
+from fastapi import FastAPI
 
 
 @asynccontextmanager
@@ -17,3 +16,4 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(lifespan=lifespan)
 app.include_router(router, prefix="/api")
 
+# app.mount("/images", StaticFiles(directory="/server/images"), name="images")
