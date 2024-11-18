@@ -12,7 +12,7 @@ class User(Base):
     __tablename__ = 'users'
     __table_args__ = {'extend_existing': True}
     id: int = Column(Integer, primary_key=True)
-    name: str = Column(String(50), nullable=False, unique=True)
+    name: str = Column(String, nullable=False, unique=True)
     api_key: str = Column(String, unique=True, index=True)
     tweets = relationship('Tweet', back_populates='user')
     likes = relationship('Like', back_populates='user')
@@ -38,7 +38,7 @@ class Tweet(Base):
     __table_args__ = {'extend_existing': True}
     id: int = Column(Integer, primary_key=True)
     user_id: int = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
-    content: str = Column(String(280), nullable=False)
+    content_data: str = Column(String, nullable=False)
     attachments = Column(ARRAY(Integer))
     user = relationship('User', back_populates='tweets', lazy='joined')
     likes = relationship('Like', back_populates='tweet', lazy='select', cascade='all, delete-orphan')
@@ -74,7 +74,3 @@ class Follow(Base):
     followed_id: int = Column(Integer, ForeignKey('users.id'), primary_key=True)
     follower = relationship('User', foreign_keys=[follower_id])
     followed = relationship('User', foreign_keys=[followed_id])
-
-
-
-

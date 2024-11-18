@@ -1,13 +1,13 @@
-"""Schemas for api."""
+"""Routes for api."""
 
 import aiofiles
 from database import session
-from fastapi import APIRouter, File, Header, UploadFile
+from fastapi import APIRouter, File, Header, HTTPException, UploadFile
 from models import Follow, Like, Media, Tweet, User
 from schemas import TweetSchema
 from sqlalchemy import delete
 from sqlalchemy.future import select
-from utlis import get_tweets, get_tweets_info, get_user, get_users_info
+from utlis import get_tweets_info, get_tweets_sort, get_user, get_users_info
 
 router = APIRouter()
 
@@ -22,13 +22,18 @@ async def get_profile_my(api_key: str = Header(default=..., alias='api-key')):
 
     Returns:
         dict: Information about me.
+
+    Raises:
+        HTTPException: If user is not in database
     """
     result_user = await get_user(api_key)
-    user_model = await get_users_info(result_user.id, result_user.name)
-    return {
-        'result': True,
-        'user': user_model.model_dump(),
-    }
+    if result_user:
+        user_model = await get_users_info(result_user.id, result_user.name)
+        return {
+            'result': True,
+            'user': user_model.model_dump(),
+        }
+    raise HTTPException(status_code=400, detail='No user with this api-key')
 
 
 @router.post(path='/tweets')
@@ -37,16 +42,19 @@ async def tweet_post(tweet_data: TweetSchema, api_key: str = Header(default=...,
     Add post.
 
     Parameters:
-        tweet_data (TweetSchema): tweet content
+        tweet_data (TweetSchema): tweet content_data
         api_key (str): The API key used to identify the user.
 
     Returns:
         dict: Information about success.
+
+    Raises:
+        HTTPException: If tweet_data error
     """
     user = await get_user(api_key)
     if user:
         user_id = user.id
-        tweet_model = Tweet(content=tweet_data.tweet_data, attachments=tweet_data.tweet_media_ids, user_id = user_id)
+        tweet_model = Tweet(content_data=tweet_data.tweet_data, attachments=tweet_data.tweet_media_ids, user_id=user_id)
         session.add(tweet_model)
         await session.commit()
         await session.refresh(tweet_model)
@@ -54,6 +62,7 @@ async def tweet_post(tweet_data: TweetSchema, api_key: str = Header(default=...,
             'result': True,
             'tweet_id': tweet_model.id,
         }
+    raise HTTPException(status_code=400, detail='Access denied')
 
 
 @router.post(path='/medias')
@@ -95,6 +104,9 @@ async def tweet_delete(id_tweet, api_key: str = Header(default=..., alias='api-k
 
     Returns:
         dict: Information about success.
+
+    Raises:
+        HTTPException: If user is not owner of tweet
     """
     user = await get_user(api_key)
     tweet_deleting = await session.execute(select(Tweet).where(
@@ -102,9 +114,11 @@ async def tweet_delete(id_tweet, api_key: str = Header(default=..., alias='api-k
     ),
     )
     tweet_to_delete = tweet_deleting.scalar()
-    await session.delete(tweet_to_delete)
-    await session.commit()
-    return {'result': True}
+    if tweet_to_delete:
+        await session.delete(tweet_to_delete)
+        await session.commit()
+        return {'result': True}
+    raise HTTPException(status_code=404, detail='No tweet with this id')
 
 
 @router.post(path='/tweets/{id_tweet}/likes')
@@ -160,13 +174,21 @@ async def tweet_follow(id_user, api_key: str = Header(default=..., alias='api-ke
 
     Returns:
         dict: Information about success.
+
+    Raises:
+        HTTPException: If user is not in database
     """
     user = await get_user(api_key)
-    follow_model = Follow(follower_id=user.id, followed_id=int(id_user))
-    session.add(follow_model)
-    await session.commit()
-    await session.refresh(follow_model)
-    return {'result': True}
+    check = await session.execute(
+        select(User).where(User.id == int(id_user)),
+    )
+    if check.scalar():
+        follow_model = Follow(follower_id=user.id, followed_id=int(id_user))
+        session.add(follow_model)
+        await session.commit()
+        await session.refresh(follow_model)
+        return {'result': True}
+    raise HTTPException(status_code=400, detail='User with this id doed not exist')
 
 
 @router.delete(path='/users/{id_user}/follow')
@@ -199,12 +221,7 @@ async def tweet_get() -> dict:
     Returns:
         dict: A dictionary containing the info about the tweets.
     """
-    user = await session.execute(select(User))
-    users_ids = [user.id for user in user.scalars()]
-    tweets = []
-    for id_f in users_ids:
-        data_d = await get_tweets(id_f)
-        tweets.append(data_d)
+    tweets = await get_tweets_sort()
     data_tweets = {
         'result': True,
         'tweets': [
@@ -226,12 +243,18 @@ async def get_profile_for_id(user_id):
 
     Returns:
         dict: Info about the user.
+
+    Raises:
+        HTTPException: If user is not in database
     """
     user_select = await session.execute(
         select(User).where(User.id == int(user_id)),
     )
-    user_model = await get_users_info(user_id, user_select.scalar().name)
-    return {
-        'result': True,
-        'user': user_model.model_dump(),
-    }
+    name = user_select.scalar()
+    if name:
+        user_model = await get_users_info(user_id, name.name)
+        return {
+            'result': True,
+            'user': user_model.model_dump(),
+        }
+    raise HTTPException(status_code=404, detail='No user with this id')

@@ -75,7 +75,7 @@ async def get_tweets(id_f):
         id_f (int): The id_f k used to identify the user.
 
     Returns:
-        User: The user associated with the API key.
+        User: The tweet of user by id.
     """
     follower_count = await session.execute(
         select(func.count()).select_from(Follow).where(Follow.followed_id == id_f),
@@ -85,7 +85,51 @@ async def get_tweets(id_f):
         select(Tweet).where(Tweet.user_id == id_f),
     )
 
-    return tweet_select.scalars(), follower_count
+    return tweet_select.scalars(), follower_count if isinstance(follower_count, int) else 0
+
+
+async def get_likes_for_tweet(tweet_id):
+    """
+    Get tweets by id_f key.
+
+    Parameters:
+        tweet_id (int): The id_f used to identify the tweet.
+
+    Returns:
+        likes (array): The likes of tweet.
+    """
+    likes = []
+    like_d = await session.execute(
+        select(Like).where(Like.tweet_id == tweet_id),
+    )
+    for like in like_d.scalars():
+        name_user = await session.execute(
+            select(User).where(User.id == like.user_id),
+        )
+        likes.append({
+            'user_id': like.user_id,
+            'name': name_user.scalar().name,
+        })
+    return likes
+
+
+async def get_attachments_for_tweet(tweet):
+    """
+    Get tweets by id_f key.
+
+    Parameters:
+        tweet (Tweet): The tweet model.
+
+    Returns:
+        attachments (array): The array of attachments of tweet.
+    """
+    attachments = []
+    for file_id in tweet.attachments:
+        attachments_d = await session.execute(
+            select(Media.path_file).where(Media.id == int(file_id)),
+        )
+        attachments.append(attachments_d.scalar())
+    return attachments
 
 
 async def get_tweets_info(tweets_users):
@@ -93,41 +137,41 @@ async def get_tweets_info(tweets_users):
     Get tweets by id_f key.
 
     Parameters:
-        tweets_users (list): The id_f k used to identify the user.
+        tweets_users (list): The id in tweets_users used to identify the tweet.
 
     Returns:
-        User: The user associated with the API key.
+        data_tweets (list): The user associated with the API key.
     """
     data_tweets = []
     for elem in tweets_users[0]:
-        likes = []
-        like_d = await session.execute(
-            select(Like).where(Like.tweet_id == elem.id),
-        )
-        for like in like_d.scalars():
-            name_user = await session.execute(
-                select(User).where(User.id == like.user_id),
-            )
-            likes.append({
-                'user_id': like.user_id,
-                'name': name_user.scalar().name,
-            })
-        attachments = []
-        for file_id in elem.attachments:
-            attachments_d = await session.execute(
-                select(Media.path_file).where(Media.id == int(file_id)),
-            )
-            attachments.append(attachments_d.scalar())
+        likes = await get_likes_for_tweet(elem.id)
+        attachments = await get_attachments_for_tweet(elem)
+
         data_tweets.append({
             'id': elem.id,
-            'content': elem.content,
+            'content': elem.content_data,
             'attachments': attachments,
             'author': {
                 'id': elem.user_id,
                 'name': elem.user.name,
             },
             'likes': likes,
-        },
-        )
+        })
 
     return data_tweets
+
+
+async def get_tweets_sort():
+    """
+    Get tweets by id_f key.
+
+    Returns:
+        tweets (list): The tweet info
+    """
+    user = await session.execute(select(User))
+    users_ids = [user.id for user in user.scalars()]
+    tweets = []
+    for id_f in users_ids:
+        data_d = await get_tweets(id_f)
+        tweets.append(data_d)
+    return tweets

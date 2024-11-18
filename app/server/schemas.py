@@ -42,7 +42,7 @@ class TweetSchema(BaseModel):
     """
     Schema for tweet data.
 
-    tweet_data(str): content of tweet
+    tweet_data(str): content_data of tweet
     tweet_media_ids(array): id from media
     """
 
