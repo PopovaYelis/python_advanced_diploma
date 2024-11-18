@@ -15,7 +15,6 @@ load_dotenv()
 if os.getenv("ENV") == "test":
     from app.server.main import app as _app
     from app.server.models import Base, User
-    from app.server.routes import get_session
 
     url_engine = os.getenv("DATABASE_URL_TEST")
     if not url_engine:
@@ -37,7 +36,6 @@ if os.getenv("ENV") == "test":
         async with async_session() as s:
             yield s
 
-    _app.dependency_overrides[get_session] = override_get_session
 
     @pytest.fixture(scope="session", autouse=True)
     async def setup_test_db() -> AsyncGenerator[None, None]:
